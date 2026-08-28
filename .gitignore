@@ -1,3 +1,4 @@
 vendor/
 data/*.sqlite
 data/*.sqlite-journal
+.phpunit.result.cache

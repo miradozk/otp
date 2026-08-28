@@ -44,4 +44,35 @@ final class Totp
 
         return $bytes;
     }
+
+    /**
+     * HOTP (RFC 4226) : HMAC-SHA1 du compteur, puis « troncature dynamique ».
+     *
+     * Étapes :
+     *  1. Sérialiser $counter en 8 octets big-endian  → pack('J', $counter)
+     *  2. $hash = hash_hmac('sha1', $message, $key, true)  (20 octets bruts)
+     *  3. $offset = 4 bits de poids faible du dernier octet : ord($hash[19]) & 0x0F
+     *  4. Lire 4 octets à partir de $offset, masquer le bit de signe du premier (& 0x7F),
+     *     assembler en entier 31 bits big-endian
+     *  5. Réduire modulo 10 ** $digits, puis compléter à gauche avec des « 0 »
+     *
+     * @param string $key     clé secrète en octets bruts (sortie de base32Decode)
+     * @param int    $counter compteur (pour TOTP : intdiv(temps, période))
+     * @param int    $digits  longueur du code (6 ou 8)
+     */
+    public static function hotp(string $key, int $counter, int $digits = 6): string
+    {
+        $message = pack('J', $counter); // 64 bits non signés, big-endian
+        $hash = hash_hmac('sha1', $message, $key, true);
+
+        $offset = ord($hash[19]) & 0x0F;
+        $binary = ((ord($hash[$offset]) & 0x7F) << 24)
+            | (ord($hash[$offset + 1]) << 16)
+            | (ord($hash[$offset + 2]) << 8)
+            | ord($hash[$offset + 3]);
+
+        $code = $binary % (10 ** $digits);
+
+        return str_pad((string) $code, $digits, '0', STR_PAD_LEFT);
+    }
 }
