@@ -37,6 +37,24 @@ final class App
             };
         }
 
+        if (preg_match('#^/secrets/([^/]+)$#', $path, $m) === 1) {
+            if ($method !== 'DELETE') {
+                return self::methodNotAllowed();
+            }
+
+            return $this->store->delete($m[1])
+                ? [204, []]
+                : [404, ['error' => "nom inconnu « {$m[1]} »"]];
+        }
+
+        if (preg_match('#^/otp/([^/]+)$#', $path, $m) === 1) {
+            if ($method !== 'GET') {
+                return self::methodNotAllowed();
+            }
+
+            return $this->currentCode($m[1], $now);
+        }
+
         return [404, ['error' => 'route inconnue']];
     }
 
@@ -81,6 +99,23 @@ final class App
         }
 
         return [201, ['name' => $name]];
+    }
+
+    /** @return array{0: int, 1: array<string, mixed>} */
+    private function currentCode(string $name, int $now): array
+    {
+        $row = $this->store->find($name);
+        if ($row === null) {
+            return [404, ['error' => "nom inconnu « {$name} »"]];
+        }
+
+        $key = Totp::base32Decode($row['secret']);
+
+        return [200, [
+            'name' => $name,
+            'code' => Totp::totp($key, $now, $row['period'], $row['digits']),
+            'expires_in' => Totp::expiresIn($now, $row['period']),
+        ]];
     }
 
     /** @return array{0: int, 1: array<string, mixed>} */

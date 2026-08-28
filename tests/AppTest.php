@@ -144,4 +144,63 @@ final class AppTest extends TestCase
 
         self::assertSame(404, $status);
     }
+
+    public function testDeleteReturns204AndRemoves(): void
+    {
+        $this->post('/secrets', ['name' => 'github', 'secret' => self::SECRET]);
+
+        self::assertSame([204, []], $this->app->handle('DELETE', '/secrets/github', '', 0));
+        self::assertNull($this->store->find('github'));
+    }
+
+    public function testDeleteUnknownReturns404(): void
+    {
+        [$status, $body] = $this->app->handle('DELETE', '/secrets/nope', '', 0);
+
+        self::assertSame(404, $status);
+        self::assertArrayHasKey('error', $body);
+    }
+
+    public function testSecretsByNameRejectsOtherMethods(): void
+    {
+        [$status] = $this->app->handle('GET', '/secrets/github', '', 0);
+
+        self::assertSame(405, $status);
+    }
+
+    public function testOtpReturnsCurrentCode(): void
+    {
+        // Secret RFC 6238 « 12345678901234567890 » en base32 ; à T=59 le code SHA-1 vaut 287082.
+        $this->post('/secrets', ['name' => 'rfc', 'secret' => 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ']);
+
+        $response = $this->app->handle('GET', '/otp/rfc', '', 59);
+
+        self::assertSame([200, ['name' => 'rfc', 'code' => '287082', 'expires_in' => 1]], $response);
+    }
+
+    public function testOtpHonoursDigitsAndPeriod(): void
+    {
+        $this->post('/secrets', ['name' => 'rfc', 'secret' => 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ', 'digits' => 8, 'period' => 60]);
+
+        [$status, $body] = $this->app->handle('GET', '/otp/rfc', '', 59);
+
+        self::assertSame(200, $status);
+        self::assertSame('84755224', $body['code']); // compteur 0, 8 chiffres
+        self::assertSame(1, $body['expires_in']);
+    }
+
+    public function testOtpUnknownReturns404(): void
+    {
+        [$status, $body] = $this->app->handle('GET', '/otp/nope', '', 0);
+
+        self::assertSame(404, $status);
+        self::assertArrayHasKey('error', $body);
+    }
+
+    public function testOtpRejectsOtherMethods(): void
+    {
+        [$status] = $this->app->handle('POST', '/otp/github', '', 0);
+
+        self::assertSame(405, $status);
+    }
 }
