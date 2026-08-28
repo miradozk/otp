@@ -115,6 +115,7 @@ final class App
             'name' => $name,
             'code' => Totp::totp($key, $now, $row['period'], $row['digits']),
             'expires_in' => Totp::expiresIn($now, $row['period']),
+            'period' => $row['period'],
         ]];
     }
 

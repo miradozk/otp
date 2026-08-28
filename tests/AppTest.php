@@ -175,7 +175,7 @@ final class AppTest extends TestCase
 
         $response = $this->app->handle('GET', '/otp/rfc', '', 59);
 
-        self::assertSame([200, ['name' => 'rfc', 'code' => '287082', 'expires_in' => 1]], $response);
+        self::assertSame([200, ['name' => 'rfc', 'code' => '287082', 'expires_in' => 1, 'period' => 30]], $response);
     }
 
     public function testOtpHonoursDigitsAndPeriod(): void
@@ -187,6 +187,7 @@ final class AppTest extends TestCase
         self::assertSame(200, $status);
         self::assertSame('84755224', $body['code']); // compteur 0, 8 chiffres
         self::assertSame(1, $body['expires_in']);
+        self::assertSame(60, $body['period']);
     }
 
     public function testOtpUnknownReturns404(): void
