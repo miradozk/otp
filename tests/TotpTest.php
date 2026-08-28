@@ -61,4 +61,41 @@ final class TotpTest extends TestCase
         // Le résultat doit toujours faire exactement $digits caractères.
         self::assertSame(6, strlen(Totp::hotp(self::RFC_KEY, 3)));
     }
+
+    /** @return iterable<string, array{int, string}> */
+    public static function totpVectors(): iterable
+    {
+        yield 'T=59' => [59, '287082'];
+        yield 'T=1111111109' => [1111111109, '081804'];
+        yield 'T=1111111111' => [1111111111, '050471'];
+        yield 'T=1234567890' => [1234567890, '005924'];
+        yield 'T=2000000000' => [2000000000, '279037'];
+        yield 'T=20000000000' => [20000000000, '353130'];
+    }
+
+    #[DataProvider('totpVectors')]
+    public function testTotpMatchesRfc6238Vectors(int $now, string $expected): void
+    {
+        self::assertSame($expected, Totp::totp(self::RFC_KEY, $now));
+    }
+
+    public function testTotpEightDigits(): void
+    {
+        self::assertSame('94287082', Totp::totp(self::RFC_KEY, 59, 30, 8));
+    }
+
+    public function testTotpCustomPeriod(): void
+    {
+        // Avec une période de 60 s, T=59 correspond au compteur 0.
+        self::assertSame(Totp::hotp(self::RFC_KEY, 0), Totp::totp(self::RFC_KEY, 59, 60));
+    }
+
+    public function testExpiresIn(): void
+    {
+        self::assertSame(30, Totp::expiresIn(0));
+        self::assertSame(1, Totp::expiresIn(59));
+        self::assertSame(30, Totp::expiresIn(60));
+        self::assertSame(17, Totp::expiresIn(43));
+        self::assertSame(45, Totp::expiresIn(15, 60));
+    }
 }

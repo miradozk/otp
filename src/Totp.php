@@ -75,4 +75,23 @@ final class Totp
 
         return str_pad((string) $code, $digits, '0', STR_PAD_LEFT);
     }
+
+    /**
+     * TOTP (RFC 6238) : HOTP avec pour compteur le nombre de périodes écoulées.
+     *
+     * @param string $key    clé secrète en octets bruts
+     * @param int    $now    horodatage Unix en secondes
+     * @param int    $period durée d'un code en secondes
+     * @param int    $digits longueur du code (6 ou 8)
+     */
+    public static function totp(string $key, int $now, int $period = 30, int $digits = 6): string
+    {
+        return self::hotp($key, intdiv($now, $period), $digits);
+    }
+
+    /** Secondes restantes avant le prochain code (entre 1 et $period inclus). */
+    public static function expiresIn(int $now, int $period = 30): int
+    {
+        return $period - ($now % $period);
+    }
 }
