@@ -25,10 +25,18 @@ otp/
 ├── data/otp.sqlite       # créé automatiquement au premier démarrage (ignoré par git)
 ├── tests/                # PHPUnit
 ├── composer.json         # autoload PSR-4 (App\ → src/), phpunit en require-dev
+├── serve.sh              # démarre le serveur (crée data/, php -S 127.0.0.1:PORT -t public)
 └── .gitignore            # vendor/, data/*.sqlite
 ```
 
-Lancement : `php -S 127.0.0.1:8080 -t public` (localhost uniquement).
+Lancement : `./serve.sh [port]` (défaut 8080), qui exécute
+`php -S 127.0.0.1:PORT -t public` — localhost uniquement.
+
+### `serve.sh` — script de démarrage
+
+`#!/usr/bin/env bash`, `set -euo pipefail`, se place dans le dossier du script,
+vérifie que `php` est présent (message d'erreur clair sinon), crée `data/` si
+absent, affiche l'URL, puis lance `exec php -S 127.0.0.1:"${1:-8080}" -t public`.
 
 ## Composants
 
