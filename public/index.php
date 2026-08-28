@@ -9,6 +9,16 @@ use App\Store;
 
 // Adaptateur HTTP : superglobales → App::handle() → réponse JSON.
 
+$rawPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$path = rawurldecode(is_string($rawPath) && $rawPath !== '' ? $rawPath : '/');
+
+// La page d'accueil est statique ; le routeur de « php -S » ne la servirait pas seul.
+if ($path === '/' || $path === '/index.html') {
+    header('Content-Type: text/html; charset=utf-8');
+    readfile(__DIR__ . '/index.html');
+    exit;
+}
+
 $dataDir = dirname(__DIR__) . '/data';
 if (!is_dir($dataDir) && !mkdir($dataDir, 0750, true) && !is_dir($dataDir)) {
     http_response_code(500);
@@ -19,8 +29,6 @@ if (!is_dir($dataDir) && !mkdir($dataDir, 0750, true) && !is_dir($dataDir)) {
 
 $app = new App(new Store('sqlite:' . $dataDir . '/otp.sqlite'));
 
-$rawPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$path = rawurldecode(is_string($rawPath) && $rawPath !== '' ? $rawPath : '/');
 $body = file_get_contents('php://input');
 
 [$status, $payload] = $app->handle(

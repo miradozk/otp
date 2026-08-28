@@ -11,6 +11,10 @@ composer install      # une seule fois (PHPUnit, autoload)
 
 ## Utiliser
 
+Ouvre <http://127.0.0.1:8080> : un formulaire pour ajouter un secret, et la liste des codes courants avec compte à rebours.
+
+En ligne de commande :
+
 ```bash
 # ajouter un secret (base32, tel que fourni par le service)
 curl -s -X POST localhost:8080/secrets -d '{"name":"github","secret":"JBSWY3DPEHPK3PXP"}'
