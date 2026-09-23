@@ -30,10 +30,26 @@ curl -s -X DELETE localhost:8080/secrets/github
 
 Options à l'ajout : `"digits": 6|8` (défaut 6), `"period": 1..300` (défaut 30).
 
+## Base de données
+
+Les secrets sont stockés en clair dans `data/otp.sqlite` (ignoré par git). Le fichier et la table `secrets` sont créés automatiquement à la première requête HTTP : aucune étape de migration n'est nécessaire.
+
+Pour créer une base vide sans lancer le serveur (par exemple avant un premier déploiement) :
+
+```bash
+php -r 'require "vendor/autoload.php"; new App\Store("sqlite:data/otp.sqlite");'
+```
+
+Pour repartir de zéro, arrête le serveur puis supprime le fichier ; il sera recréé vide au prochain démarrage. **Cette opération efface définitivement tous les secrets enregistrés.**
+
+```bash
+rm data/otp.sqlite
+```
+
 ## Tests
 
 ```bash
 vendor/bin/phpunit
 ```
 
-Les secrets sont stockés en clair dans `data/otp.sqlite` (ignoré par git) ; le serveur n'écoute que sur `127.0.0.1`.
+Le serveur n'écoute que sur `127.0.0.1`.
